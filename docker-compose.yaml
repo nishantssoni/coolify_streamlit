@@ -1,0 +1,19 @@
+services:
+  streamlit-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: streamlit-demo123
+    working_dir: /app
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - SUPABASE_URL={SUPABASE_URL}
+      - SUPABASE_KEY={SUPABASE_KEY}
+      - COOKIE_PASSWORD={COOKIE_PASSWORD}
+      - PORT={PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${PORT}/_stcore/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
