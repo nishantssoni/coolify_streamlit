@@ -8,10 +8,10 @@ services:
     ports:
       - ${PORT}:${PORT}
     environment:
-      - SUPABASE_URL={SUPABASE_URL}
-      - SUPABASE_KEY={SUPABASE_KEY}
-      - COOKIE_PASSWORD={COOKIE_PASSWORD}
-      - PORT={PORT}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - COOKIE_PASSWORD=${COOKIE_PASSWORD}
+      - PORT=${PORT}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:$PORT/_stcore/health || exit 1"]
       interval: 30s
