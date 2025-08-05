@@ -187,7 +187,7 @@ async def show_main_app_async():
         st.sidebar.success("✅ Logged in")
         if st.sidebar.button("🚪 Logout", key="logout_btn"):
             clear_token()
-            st.experimental_rerun()
+            st.rerun()
     else:
         st.sidebar.warning("🔒 Not logged in")
 
@@ -230,7 +230,7 @@ async def show_main_app_async():
                         with st.spinner("Deleting blog post..."):
                             await delete_task_async(task['id'])
                         st.success("Deleted blog post!")
-                        st.experimental_rerun()
+                        st.rerun()
     else:
         st.info("No blog posts found that match your search.")
 
@@ -243,7 +243,7 @@ async def show_main_app_async():
                 with st.spinner("Adding blog post..."):
                     await add_task_async(new_title.strip(), new_desc.strip())
                 st.success("Blog post added successfully!")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.warning("Title cannot be empty.")
 
@@ -264,7 +264,7 @@ async def show_main_app_async():
                     with st.spinner("Updating blog post..."):
                         await edit_task_async(task_to_edit[0], update_fields)
                     st.success("Blog post updated!")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.warning("Please enter new title or content to update.")
         else:
@@ -278,7 +278,7 @@ async def show_main_app_async():
                 with st.spinner("Deleting selected blog..."):
                     await delete_task_async(task_to_delete[0])
                 st.success("Deleted blog post!")
-                st.experimental_rerun()
+                st.rerun()
         else:
             st.info("No blog posts available to delete.")
 
@@ -296,7 +296,7 @@ async def show_main_app_async():
                     with st.spinner(f"Deleting {len(selected)} blog posts..."):
                         await asyncio.gather(*[delete_task_async(task[0]) for task in selected])
                     st.success(f"Deleted {len(selected)} blog posts!")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.warning("Please select at least one blog post.")
         else:
@@ -319,7 +319,7 @@ async def handle_auth_async():
                         if session and session.access_token:
                             save_token(session.access_token)
                             st.success("Logged in!")
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error("Failed to login. Please check credentials.")
                 except Exception as e:
@@ -333,7 +333,7 @@ async def handle_auth_async():
                         if getattr(res, "user", None):
                             st.success("Registration successful! Check your email for verification link.")
                             st.info("After verification, return to Sign In.")
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error("Sign up failed. Try again.")
                 except Exception as e:
