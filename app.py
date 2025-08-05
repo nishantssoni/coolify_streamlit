@@ -5,33 +5,28 @@ from supabase import create_client
 from streamlit_cookies_manager import EncryptedCookieManager
 import nest_asyncio
 
-# Apply nest_asyncio to handle async in Streamlit
 nest_asyncio.apply()
-
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 COOKIE_PASSWORD = os.getenv("COOKIE_PASSWORD")
 
-# Validate environment variables
 if not SUPABASE_URL:
     st.error("SUPABASE_URL environment variable is not set. Please check your .env file.")
     st.stop()
-
 if not SUPABASE_KEY:
     st.error("SUPABASE_KEY environment variable is not set. Please check your .env file.")
     st.stop()
-
 if not COOKIE_PASSWORD:
     st.error("COOKIE_PASSWORD environment variable is not set. Please check your .env file.")
     st.stop()
 
 # --- Initialize cookie manager ---
-cookies = EncryptedCookieManager(prefix="myapp_", password=COOKIE_PASSWORD)
+cookies = EncryptedCookieManager(prefix="femtotech_", password=COOKIE_PASSWORD)
 if not cookies.ready():
     st.stop()
 
-# --- Authentication token helpers ---
+# --- Token helpers ---
 def save_token(token: str):
     cookies["sb_token"] = token
     cookies.save()
@@ -43,194 +38,276 @@ def clear_token():
     cookies["sb_token"] = ""
     cookies.save()
 
-# --- Supabase client (same pattern as your working code) ---
+# --- Supabase client ---
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# --- Async Authentication Functions ---
+# --- Async backend functions ---
 async def login_user_async(email: str, password: str):
-    """Async login function"""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(
-        None, 
-        lambda: supabase.auth.sign_in_with_password({"email": email, "password": password})
-    )
-
-async def signup_user_async(email: str, password: str):
-    """Async signup function"""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         None,
-        lambda: supabase.auth.sign_up({"email": email, "password": password})
+        lambda: supabase.auth.sign_in_with_password({"email": email, "password": password}),
     )
 
-# --- Async CRUD Operations (following your working pattern) ---
+
+async def signup_user_async(email: str, password: str):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,
+        lambda: supabase.auth.sign_up({"email": email, "password": password}),
+    )
+
+
 async def get_tasks_async():
-    """Async function to get all tasks"""
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(
         None,
-        lambda: supabase.table("tasks").select("*").execute()
+        lambda: supabase.table("tasks").select("*").execute(),
     )
     return getattr(response, "data", [])
 
+
 async def add_task_async(title: str, description: str):
-    """Async function to add a new task"""
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
         None,
-        lambda: supabase.table("tasks").insert({"title": title, "description": description}).execute()
+        lambda: supabase.table("tasks").insert({"title": title, "description": description}).execute(),
     )
+
 
 async def edit_task_async(task_id: int, update_fields: dict):
-    """Async function to edit a task"""
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
         None,
-        lambda: supabase.table("tasks").update(update_fields).eq("id", task_id).execute()
+        lambda: supabase.table("tasks").update(update_fields).eq("id", task_id).execute(),
     )
+
 
 async def delete_task_async(task_id: int):
-    """Async function to delete a task"""
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
         None,
-        lambda: supabase.table("tasks").delete().eq("id", task_id).execute()
+        lambda: supabase.table("tasks").delete().eq("id", task_id).execute(),
     )
 
-# --- Async wrapper for Streamlit ---
+
+# --- Async helper ---
 def run_async(coro):
-    """Helper function to run async functions in Streamlit"""
     try:
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(coro)
     except RuntimeError:
         return asyncio.run(coro)
 
-# --- Streamlit UI ---
-st.set_page_config(page_title="⚡ Async Supabase Task Manager", layout="wide")
+# --- Custom CSS Styling ---
+st.markdown(
+    """
+    <style>
+    /* GENERAL */
+    .stApp {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #e0f7fa 0%, #80deea 100%);
+        color: #0a3d62;
+    }
+    /* SIDEBAR */
+    [data-testid="stSidebar"] {
+        background-color: #073b4c;
+        color: white;
+        font-weight: 600;
+    }
+    [data-testid="stSidebar"] .css-1d391kg {
+        padding-top: 1rem;
+    }
+
+    /* HEADERS */
+    h1, h2, h3, h4 {
+        font-weight: 700;
+        color: #074047;
+    }
+
+    /* BUTTONS */
+    div.stButton > button:first-child {
+        background-color: #118ab2;
+        color: white;
+        border-radius: 8px;
+        padding: 0.5em 1.2em;
+        transition: background-color 0.2s ease;
+        font-weight: 600;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #06aed5;
+        color: white;
+    }
+
+    /* TEXT INPUTS */
+    .stTextInput>div>div>input, .stTextArea>div>textarea {
+        border-radius: 8px;
+        border: 1.8px solid #118ab2;
+        padding: 0.4em 0.6em;
+    }
+    .stTextInput>div>label, .stTextArea>div>label {
+        font-weight: 600;
+        color: #073b4c;
+    }
+
+    /* Cards for tasks */
+    .task-card {
+        background-color: white;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgb(0 0 0 / 0.1);
+        transition: box-shadow 0.2s ease;
+    }
+    .task-card:hover {
+        box-shadow: 0 8px 12px rgb(0 0 0 / 0.2);
+    }
+
+    /* Badge */
+    .task-badge {
+        background-color: #06aed5;
+        color: white;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 async def show_main_app_async():
-    st.title("⚡ Async Task Manager with Supabase")
-    st.sidebar.header("Manage Tasks")
-    st.sidebar.write("You are logged in.")
+    st.sidebar.header("👾 Femtotech Blogs Manager")
+    st.sidebar.markdown("Built with :blue[Supabase] and :orange[Streamlit]")
 
-    # --- Logout ---
-    st.sidebar.header("Account")
-    if st.sidebar.button("Logout"):
-        clear_token()
-        st.success("Logged out!")
-        st.rerun()
-
-    # --- Show current tasks with loading spinner ---
-    with st.spinner("Loading tasks..."):
-        tasks = await get_tasks_async()
-    
-    st.subheader("Current Tasks")
-    if tasks:
-        for task in tasks:
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                st.markdown(f"**ID:** {task['id']}")
-                st.markdown(f"**Title:** {task['title']}")
-                st.markdown(f"**Description:** {task.get('description', '')}")
-            with col2:
-                # Quick delete button for each task
-                if st.button(f"🗑️", key=f"quick_delete_{task['id']}", help="Delete this task"):
-                    with st.spinner("Deleting task..."):
-                        await delete_task_async(task['id'])
-                    st.success("Task deleted!")
-                    st.rerun()
-            st.markdown("---")
+    # Get user token info display (optional)
+    token = get_token()
+    if token:
+        st.sidebar.success("✅ Logged in")
+        if st.sidebar.button("🚪 Logout", key="logout_btn"):
+            clear_token()
+            st.experimental_rerun()
     else:
-        st.info("No tasks found.")
+        st.sidebar.warning("🔒 Not logged in")
 
-    # --- Add Task ---
-    with st.sidebar.expander("➕ Add Task"):
-        add_title = st.text_input("Task Title", key="add_title")
-        add_description = st.text_area("Task Description", key="add_desc")
-        if st.button("Add Task"):
-            if add_title.strip():
-                with st.spinner("Adding task..."):
-                    await add_task_async(add_title.strip(), add_description.strip())
-                st.success("Task added!")
-                st.rerun()
+    # Top header and description
+    st.markdown("<h1 style='text-align:center;'>⚡ Femtotech Blogs Task Manager</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='text-align:center;  font-size:1rem; color:#074047;'>"
+        "Manage your blog posts, drafts, and ideas efficiently using this simple, modern app.</p>",
+        unsafe_allow_html=True,
+    )
+
+    tasks = await get_tasks_async()
+
+    # Search/filter tasks by title
+    search_term = st.text_input("🔎 Search Tasks by Title", value="", placeholder="Search for a blog by title...")
+    filtered_tasks = [t for t in tasks if search_term.lower() in t["title"].lower()] if search_term else tasks
+
+    st.subheader(f"📝 Blog Posts ({len(filtered_tasks)})")
+
+    if filtered_tasks:
+        # Show tasks in cards grouped in 2-columns
+        for i in range(0, len(filtered_tasks), 2):
+            cols = st.columns(2)
+            for j, col in enumerate(cols):
+                if i + j >= len(filtered_tasks):
+                    break
+                task = filtered_tasks[i + j]
+                with col:
+                    st.markdown(
+                        f"""
+                        <div class="task-card">
+                            <h4>{task['title']} <span class="task-badge">ID:{task['id']}</span></h4>
+                            <p style="color:#555;">{task.get("description", "(No Description)")}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    # Quick delete button next to each card
+                    if st.button(f"🗑️ Delete", key=f"quick_del_{task['id']}", help="Delete this blog post"):
+                        with st.spinner("Deleting blog post..."):
+                            await delete_task_async(task['id'])
+                        st.success("Deleted blog post!")
+                        st.experimental_rerun()
+    else:
+        st.info("No blog posts found that match your search.")
+
+    # Sidebar Expanders for CRUD operations
+    with st.sidebar.expander("➕ Add New Blog Post"):
+        new_title = st.text_input("Title of the Blog", key="add_title_ui")
+        new_desc = st.text_area("Content/Draft", key="add_desc_ui")
+        if st.button("Add Blog Post"):
+            if new_title.strip():
+                with st.spinner("Adding blog post..."):
+                    await add_task_async(new_title.strip(), new_desc.strip())
+                st.success("Blog post added successfully!")
+                st.experimental_rerun()
             else:
-                st.warning("Please enter a task title.")
+                st.warning("Title cannot be empty.")
 
-    # --- Edit Task ---
-    with st.sidebar.expander("✏️ Edit Task"):
+    with st.sidebar.expander("✏️ Edit Existing Blog"):
         if tasks:
             task_options = [(t["id"], t["title"]) for t in tasks]
-            task_to_edit = st.selectbox(
-                "Select Task to Edit",
-                options=task_options,
-                format_func=lambda x: f"ID:{x[0]} - {x[1]}",
-                key="edit_select"
-            )
-            new_title = st.text_input("New Title", value="", key="edit_title")
-            new_description = st.text_area("New Description", value="", key="edit_desc")
-            if st.button("Update Task"):
-                task_id = task_to_edit[0]
+            task_to_edit = st.selectbox("Select Blog to Edit", options=task_options, format_func=lambda x: f"ID:{x[0]} - {x[1]}", key="edit_task_select")
+            edit_title = st.text_input("New Title (leave blank to keep unchanged)", key="edit_title_ui")
+            edit_desc = st.text_area("New Content/Draft (leave blank to keep unchanged)", key="edit_desc_ui")
+
+            if st.button("Update Blog Post"):
                 update_fields = {}
-                if new_title.strip():
-                    update_fields["title"] = new_title.strip()
-                if new_description.strip():
-                    update_fields["description"] = new_description.strip()
+                if edit_title.strip():
+                    update_fields["title"] = edit_title.strip()
+                if edit_desc.strip():
+                    update_fields["description"] = edit_desc.strip()
                 if update_fields:
-                    with st.spinner("Updating task..."):
-                        await edit_task_async(task_id, update_fields)
-                    st.success("Task updated!")
-                    st.rerun()
+                    with st.spinner("Updating blog post..."):
+                        await edit_task_async(task_to_edit[0], update_fields)
+                    st.success("Blog post updated!")
+                    st.experimental_rerun()
                 else:
-                    st.warning("Please enter new title or description to update.")
+                    st.warning("Please enter new title or content to update.")
         else:
-            st.info("No tasks to edit.")
+            st.info("No blog posts available to edit.")
 
-    # --- Delete Task ---
-    with st.sidebar.expander("🗑️ Delete Task"):
+    with st.sidebar.expander("🗑️ Delete Blog Post"):
         if tasks:
             task_options = [(t["id"], t["title"]) for t in tasks]
-            task_to_delete = st.selectbox(
-                "Select Task to Delete",
-                options=task_options,
-                format_func=lambda x: f"ID:{x[0]} - {x[1]}",
-                key="delete_select"
-            )
-            if st.button("Delete Task"):
-                with st.spinner("Deleting task..."):
+            task_to_delete = st.selectbox("Select Blog to Delete", options=task_options, format_func=lambda x: f"ID:{x[0]} - {x[1]}", key="delete_task_select")
+            if st.button("Delete Selected Blog"):
+                with st.spinner("Deleting selected blog..."):
                     await delete_task_async(task_to_delete[0])
-                st.success("Task deleted!")
-                st.rerun()
+                st.success("Deleted blog post!")
+                st.experimental_rerun()
         else:
-            st.info("No tasks to delete.")
+            st.info("No blog posts available to delete.")
 
-    # --- Bulk Operations ---
+    # Bulk operations
     with st.sidebar.expander("🔄 Bulk Operations"):
         if tasks:
-            st.subheader("Bulk Delete")
-            selected_tasks = st.multiselect(
-                "Select tasks to delete",
-                options=[(t["id"], t["title"]) for t in tasks],
+            selected = st.multiselect(
+                "Select blog posts to delete",
+                options=[(task["id"], task["title"]) for task in tasks],
                 format_func=lambda x: f"ID:{x[0]} - {x[1]}",
-                key="bulk_delete_select"
+                key="bulk_delete_select_ui"
             )
-            if st.button("Delete Selected Tasks") and selected_tasks:
-                with st.spinner(f"Deleting {len(selected_tasks)} tasks..."):
-                    # Run deletions concurrently for better performance
-                    delete_tasks = [delete_task_async(task[0]) for task in selected_tasks]
-                    await asyncio.gather(*delete_tasks)
-                st.success(f"Deleted {len(selected_tasks)} tasks!")
-                st.rerun()
+            if st.button("Delete Selected"):
+                if selected:
+                    with st.spinner(f"Deleting {len(selected)} blog posts..."):
+                        await asyncio.gather(*[delete_task_async(task[0]) for task in selected])
+                    st.success(f"Deleted {len(selected)} blog posts!")
+                    st.experimental_rerun()
+                else:
+                    st.warning("Please select at least one blog post.")
         else:
-            st.info("No tasks available for bulk operations.")
+            st.info("No blog posts available for bulk operations.")
 
-# --- Async Login/Signup logic (following your working pattern) ---
 async def handle_auth_async():
     token = get_token()
     if not token:
-        st.title("🔒 Authentication")
-        mode = st.radio("Choose an option", ("Sign In", "Sign Up"))
-        email = st.text_input("Email")
+        st.title("🔒 Femtotech Blogs - Authentication")
+        mode = st.radio("Choose Action", ("Sign In", "Sign Up"))
+        email = st.text_input("Email Address")
         password = st.text_input("Password", type="password")
 
         if mode == "Sign In":
@@ -238,37 +315,34 @@ async def handle_auth_async():
                 try:
                     with st.spinner("Signing in..."):
                         auth_res = await login_user_async(email, password)
-                    session = getattr(auth_res, "session", None)
-                    if session and session.access_token:
-                        save_token(session.access_token)
-                        st.success("Logged in!")
-                        st.rerun()
-                    else:
-                        st.error("Login failed. Check your credentials.")
+                        session = getattr(auth_res, "session", None)
+                        if session and session.access_token:
+                            save_token(session.access_token)
+                            st.success("Logged in!")
+                            st.experimental_rerun()
+                        else:
+                            st.error("Failed to login. Please check credentials.")
                 except Exception as e:
-                    st.error(f"Login failed: {e}")
-            st.stop()
-
-        elif mode == "Sign Up":
+                    st.error(f"Sign in error: {e}")
+                    st.stop()
+        else:
             if st.button("Sign Up"):
                 try:
-                    with st.spinner("Creating account..."):
+                    with st.spinner("Creating your account..."):
                         res = await signup_user_async(email, password)
-                    if getattr(res, "user", None):
-                        st.success("Registration successful! Please check your email for a verification link before logging in.")
-                        st.info("After verifying your email, please return to the Sign In page to login.")
-                        st.rerun()
-                    else:
-                        st.error("Sign up failed. Please try again.")
+                        if getattr(res, "user", None):
+                            st.success("Registration successful! Check your email for verification link.")
+                            st.info("After verification, return to Sign In.")
+                            st.experimental_rerun()
+                        else:
+                            st.error("Sign up failed. Try again.")
                 except Exception as e:
-                    st.error(f"Sign-up failed: {e}")
-            st.stop()
+                    st.error(f"Sign up error: {e}")
+                    st.stop()
     else:
         await show_main_app_async()
 
-# --- Main execution ---
 def main():
-    """Main function that runs the async app"""
     run_async(handle_auth_async())
 
 if __name__ == "__main__":
