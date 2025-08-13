@@ -1,3 +1,4 @@
-streamlit
-supabase
-streamlit-cookies-manager
+fastapi
+uvicorn
+requests
+ntplib
