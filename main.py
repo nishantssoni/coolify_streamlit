@@ -7,7 +7,7 @@ import uuid
 import shutil
 
 # import your processing function from the CLI script
-from .cli import process_video
+from cli import process_video
 
 app = FastAPI()
 
