@@ -2,6 +2,11 @@ services:
   video-processor:
     build: .
     container_name: video-processor
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_BUCKET=${SUPABASE_BUCKET}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
     volumes:
       - ./processed_videos:/app/processed_videos
     restart: unless-stopped
