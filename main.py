@@ -70,7 +70,7 @@ def process_video_from_url(req: VideoRequest, background_tasks: BackgroundTasks)
     def run_processing():
         try:
             process_video(input_path, None, output_path)  # YOUR EDITING FUNCTION
-            public_url = upload_to_supabase(output_path, f"uploads/{video_id}_output.mp4")
+            public_url = upload_to_supabase(output_path, f"uploads/{video_id}output.mp4")
             notify_n8n(public_url)
         except Exception as e:
             print("[ERROR] Processing failed:", e)
